@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+
+import fs from "fs";
+
+function jsonToCsv(jsonArray) {
+  if (!Array.isArray(jsonArray) || jsonArray.length === 0) {
+    throw new Error("JSON array is empty");
+  }
+
+  // extract all keys for CSV header
+  const headers = Object.keys(jsonArray[0]);
+
+  // build CSV rows
+  const rows = jsonArray.map(obj =>
+    headers.map(h => JSON.stringify(obj[h] ?? "")).join(",")
+  );
+
+  return [headers.join(","), ...rows].join("\n");
+}
+
+// read flattened JSON
+const input = JSON.parse(fs.readFileSync("flatten.json", "utf8"));
+
+// convert
+const csv = jsonToCsv(input);
+
+// save to file
+fs.writeFileSync("flatten.csv", csv);
+
+console.log("Saved to flatten.csv 🎉");

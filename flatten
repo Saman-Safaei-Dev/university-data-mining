@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+
+import fs from "fs";
+
+function flattenItem(item) {
+  const result = {
+    id: item.id,
+    instrument_id: item.instrument_id,
+  };
+
+  // flatten buy_best_limits
+  item.buy_best_limits.forEach((limit, index) => {
+    const i = index + 1;
+    result[`buy_best_limit_${i}_volume`] = limit.volume;
+    result[`buy_best_limit_${i}_price`] = limit.price;
+    result[`buy_best_limit_${i}_count`] = limit.count;
+  });
+
+  // flatten sell_best_limits
+  item.sell_best_limits.forEach((limit, index) => {
+    const i = index + 1;
+    result[`sell_best_limit_${i}_volume`] = limit.volume;
+    result[`sell_best_limit_${i}_price`] = limit.price;
+    result[`sell_best_limit_${i}_count`] = limit.count;
+  });
+
+  // flatten real/legal buy/sell
+  const groups = ["real_buy", "real_sell", "legal_buy", "legal_sell"];
+  groups.forEach((key) => {
+    result[`${key}_value`] = item[key].value;
+    result[`${key}_volume`] = item[key].volume;
+    result[`${key}_count`] = item[key].count;
+  });
+
+  // copy the rest
+  const passthrough = [
+    "last_price",
+    "final_price",
+    "last_trade_date",
+    "trades_value",
+    "trades_volume",
+    "trades_count",
+    "high_price",
+    "low_price",
+    "state",
+    "nav",
+    "open_interest",
+    "created_at",
+  ];
+
+  passthrough.forEach((key) => {
+    result[key] = item[key];
+  });
+
+  return result;
+}
+
+let data = JSON.parse(
+  fs.readFileSync("./live_history.json", { encoding: "utf-8" })
+);
+
+const flattened = data.map(flattenItem);
+fs.writeFileSync("flatten.json", JSON.stringify(flattened, null, 2));
+console.log("Saved to flatten.json");
