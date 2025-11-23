@@ -1,0 +1,47 @@
+#!/usr/bin/env node
+
+const fs = require("fs");
+
+const input = "flatten.csv";
+const output = "reduced.csv";
+
+const colsToRemove = [
+  "id",
+  "created_at",
+  "state",
+  "nav",
+  "open_interest",
+];
+
+for (let i = 1; i <= 5; i++) {
+  colsToRemove.push(`buy_best_limit_${i}_count`);
+  colsToRemove.push(`sell_best_limit_${i}_count`);
+}
+
+const removeSet = new Set(colsToRemove.map(x => x.toLowerCase()));
+
+const raw = fs.readFileSync(input, "utf8");
+const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+
+const header = lines[0]
+  .split(",")
+  .map(h => h.trim());
+
+const keepIndexes = header
+  .map((h, i) => ({ h, i }))
+  .filter(col => !removeSet.has(col.h.toLowerCase()))
+  .map(col => col.i);
+
+const newHeader = keepIndexes.map(i => header[i]).join(",");
+
+const newRows = [newHeader];
+
+for (let i = 1; i < lines.length; i++) {
+  const cols = lines[i].split(",");
+  const filtered = keepIndexes.map(idx => cols[idx] ?? "");
+  newRows.push(filtered.join(","));
+}
+
+fs.writeFileSync(output, newRows.join("\n"));
+
+console.log("Done ✔ CSV cleaned:", output);
